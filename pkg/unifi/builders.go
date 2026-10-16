@@ -214,9 +214,29 @@ func (b *PolicyEndpointBuilder) MatchOppositePorts(enabled bool) *PolicyEndpoint
 	return b
 }
 
-// NetworkID sets the network ID for network-based matching.
-func (b *PolicyEndpointBuilder) NetworkID(id string) *PolicyEndpointBuilder {
-	b.endpoint.NetworkID = id
+// NetworkIDs sets the network IDs for network-based matching.
+func (b *PolicyEndpointBuilder) NetworkIDs(ids ...string) *PolicyEndpointBuilder {
+	b.endpoint.NetworkIDs = ids
+	return b
+}
+
+// MatchOppositeNetworks sets whether to match everything except NetworkIDs.
+func (b *PolicyEndpointBuilder) MatchOppositeNetworks(enabled bool) *PolicyEndpointBuilder {
+	b.endpoint.MatchOppositeNetworks = BoolPtr(enabled)
+	return b
+}
+
+// IPGroupID sets the firewall address group to match. Use with
+// MatchingTarget("IP") and MatchingTargetType("OBJECT").
+func (b *PolicyEndpointBuilder) IPGroupID(id string) *PolicyEndpointBuilder {
+	b.endpoint.IPGroupID = id
+	return b
+}
+
+// PortGroupID sets the firewall port group to match. Use with
+// PortMatchingType("OBJECT").
+func (b *PolicyEndpointBuilder) PortGroupID(id string) *PolicyEndpointBuilder {
+	b.endpoint.PortGroupID = id
 	return b
 }
 
