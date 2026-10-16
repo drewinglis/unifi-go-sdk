@@ -1368,3 +1368,21 @@ func TestContentFilteringValidate(t *testing.T) {
 		t.Errorf("ContentFiltering.Validate() unexpected error: %v", err)
 	}
 }
+
+// Shape copied from a v9 controller's rest/networkconf response.
+func TestNetworkIsolationEnabledJSON(t *testing.T) {
+	var n Network
+	if err := json.Unmarshal([]byte(`{"name":"Work Jail","purpose":"corporate","network_isolation_enabled":true}`), &n); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	if n.NetworkIsolationEnabled == nil || !*n.NetworkIsolationEnabled {
+		t.Fatalf("NetworkIsolationEnabled = %v, want true", n.NetworkIsolationEnabled)
+	}
+	out, err := json.Marshal(Network{Name: "x", NetworkAccess: NetworkAccess{NetworkIsolationEnabled: BoolPtr(false)}})
+	if err != nil {
+		t.Fatalf("marshal error: %v", err)
+	}
+	if !strings.Contains(string(out), `"network_isolation_enabled":false`) {
+		t.Errorf("network_isolation_enabled missing from %s", out)
+	}
+}
