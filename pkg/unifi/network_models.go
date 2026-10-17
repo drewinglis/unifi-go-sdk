@@ -692,6 +692,10 @@ type FirewallPolicy struct {
 //   - MatchingTarget: "ANY", "CLIENT", "EXTERNAL_SOURCE", "IID", "IP", "MAC", "NETWORK", "REGION", "USER_IDENTITY", "USER_IDENTITY_ONE_CLICK_VPN", "USER_IDENTITY_ONE_CLICK_WIFI", "VPN_USER"
 //   - MatchingTargetType: "SPECIFIC", "OBJECT"
 //   - PortMatchingType: "ANY", "OBJECT", "SPECIFIC"
+//
+// MatchingTargetType "OBJECT" with MatchingTarget "IP" matches the firewall
+// address group in IPGroupID; PortMatchingType "OBJECT" matches the port
+// group in PortGroupID.
 type PolicyEndpoint struct {
 	ZoneID             string   `json:"zone_id,omitempty"`
 	MatchingTarget     string   `json:"matching_target,omitempty"`
@@ -703,8 +707,15 @@ type PolicyEndpoint struct {
 	Port               string   `json:"port,omitempty"`
 	PortMatchingType   string   `json:"port_matching_type,omitempty"`
 	MatchOppositePorts *bool    `json:"match_opposite_ports,omitempty"`
-	NetworkID          string   `json:"network_id,omitempty"`
-	ClientMACs         []string `json:"client_macs,omitempty"`
+	IPGroupID          string   `json:"ip_group_id,omitempty"`
+	PortGroupID        string   `json:"port_group_id,omitempty"`
+	// NetworkIDs is plural (controller field is `network_ids`). Earlier SDK
+	// versions had a singular `NetworkID string` field that serialized to
+	// `network_id`; the controller ignored it and rejected NETWORK policies
+	// with EmptyFirewallPolicy{Source,Destination}NetworkIds.
+	NetworkIDs            []string `json:"network_ids,omitempty"`
+	MatchOppositeNetworks *bool    `json:"match_opposite_networks,omitempty"`
+	ClientMACs            []string `json:"client_macs,omitempty"`
 }
 
 // Validate checks that PolicyEndpoint fields have valid values.

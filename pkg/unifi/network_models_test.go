@@ -1368,3 +1368,55 @@ func TestContentFilteringValidate(t *testing.T) {
 		t.Errorf("ContentFiltering.Validate() unexpected error: %v", err)
 	}
 }
+
+// Shapes copied from a v9 controller's GET /firewall-policies response.
+func TestPolicyEndpointControllerJSON(t *testing.T) {
+	t.Run("networks", func(t *testing.T) {
+		data := []byte(`{"match_opposite_networks":false,"match_opposite_ports":false,` +
+			`"matching_target":"NETWORK","matching_target_type":"SPECIFIC",` +
+			`"network_ids":["net-a","net-b"],"port_matching_type":"ANY","zone_id":"zone-1"}`)
+		var ep PolicyEndpoint
+		if err := json.Unmarshal(data, &ep); err != nil {
+			t.Fatalf("unmarshal error: %v", err)
+		}
+		if len(ep.NetworkIDs) != 2 || ep.NetworkIDs[0] != "net-a" || ep.NetworkIDs[1] != "net-b" {
+			t.Errorf("NetworkIDs = %v, want [net-a net-b]", ep.NetworkIDs)
+		}
+		if ep.MatchOppositeNetworks == nil || *ep.MatchOppositeNetworks {
+			t.Errorf("MatchOppositeNetworks = %v, want false", ep.MatchOppositeNetworks)
+		}
+	})
+
+	t.Run("groups", func(t *testing.T) {
+		data := []byte(`{"ip_group_id":"ipgroup-1","ips":[],"match_opposite_ips":false,` +
+			`"matching_target":"IP","matching_target_type":"OBJECT",` +
+			`"port_group_id":"portgroup-1","port_matching_type":"OBJECT","zone_id":"zone-1"}`)
+		var ep PolicyEndpoint
+		if err := json.Unmarshal(data, &ep); err != nil {
+			t.Fatalf("unmarshal error: %v", err)
+		}
+		if ep.IPGroupID != "ipgroup-1" {
+			t.Errorf("IPGroupID = %q, want ipgroup-1", ep.IPGroupID)
+		}
+		if ep.PortGroupID != "portgroup-1" {
+			t.Errorf("PortGroupID = %q, want portgroup-1", ep.PortGroupID)
+		}
+	})
+
+	t.Run("marshal uses network_ids", func(t *testing.T) {
+		data, err := json.Marshal(PolicyEndpoint{MatchingTarget: "NETWORK", NetworkIDs: []string{"net-a"}})
+		if err != nil {
+			t.Fatalf("marshal error: %v", err)
+		}
+		var raw map[string]any
+		if err := json.Unmarshal(data, &raw); err != nil {
+			t.Fatalf("unmarshal to map error: %v", err)
+		}
+		if _, ok := raw["network_ids"]; !ok {
+			t.Errorf("expected network_ids in %s", data)
+		}
+		if _, ok := raw["network_id"]; ok {
+			t.Errorf("unexpected network_id in %s", data)
+		}
+	})
+}

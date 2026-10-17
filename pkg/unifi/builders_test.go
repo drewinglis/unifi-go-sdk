@@ -257,12 +257,33 @@ func TestPolicyEndpointBuilder(t *testing.T) {
 
 	t.Run("network-based", func(t *testing.T) {
 		endpoint := NewPolicyEndpointBuilder().
-			NetworkID("network-123").
+			NetworkIDs("network-123", "network-456").
 			MatchingTarget("NETWORK").
+			MatchOppositeNetworks(true).
 			Build()
 
-		if endpoint.NetworkID != "network-123" {
-			t.Errorf("expected network ID 'network-123', got %q", endpoint.NetworkID)
+		if len(endpoint.NetworkIDs) != 2 || endpoint.NetworkIDs[0] != "network-123" || endpoint.NetworkIDs[1] != "network-456" {
+			t.Errorf("expected network IDs [network-123 network-456], got %v", endpoint.NetworkIDs)
+		}
+		if endpoint.MatchOppositeNetworks == nil || !*endpoint.MatchOppositeNetworks {
+			t.Error("expected MatchOppositeNetworks to be true")
+		}
+	})
+
+	t.Run("group-based", func(t *testing.T) {
+		endpoint := NewPolicyEndpointBuilder().
+			MatchingTarget("IP").
+			MatchingTargetType("OBJECT").
+			IPGroupID("ipgroup-1").
+			PortMatchingType("OBJECT").
+			PortGroupID("portgroup-1").
+			Build()
+
+		if endpoint.IPGroupID != "ipgroup-1" {
+			t.Errorf("expected IP group ID 'ipgroup-1', got %q", endpoint.IPGroupID)
+		}
+		if endpoint.PortGroupID != "portgroup-1" {
+			t.Errorf("expected port group ID 'portgroup-1', got %q", endpoint.PortGroupID)
 		}
 	})
 

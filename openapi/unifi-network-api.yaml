@@ -1990,8 +1990,20 @@ components:
           enum: [ANY, OBJECT, SPECIFIC]
         match_opposite_ports:
           type: boolean
-        network_id:
+        ip_group_id:
           type: string
+          description: Firewall address group to match (matching_target IP, matching_target_type OBJECT)
+        port_group_id:
+          type: string
+          description: Firewall port group to match (port_matching_type OBJECT)
+        network_ids:
+          # Read from a v9 controller. The previous singular `network_id` was
+          # ignored on input.
+          type: array
+          items:
+            type: string
+        match_opposite_networks:
+          type: boolean
         client_macs:
           type: array
           items:
