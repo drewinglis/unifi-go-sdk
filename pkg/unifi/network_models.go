@@ -1833,6 +1833,50 @@ type PortOverride struct {
 	StormctrlUcastEnabled         *bool    `json:"stormctrl_ucast_enabled,omitempty"`
 	StormctrlUcastRate            *int     `json:"stormctrl_ucast_rate,omitempty"`
 	MulticastRouterNetworkconfIDs []string `json:"multicast_router_networkconf_ids,omitempty"`
+
+	// Extra holds keys the controller returned that PortOverride has no field
+	// for (e.g. dot1x_ctrl, stp_edge_state). They are written back unchanged,
+	// because a device update replaces port_overrides wholesale and would
+	// otherwise reset them on every port of the switch.
+	Extra map[string]json.RawMessage `json:"-"`
+}
+
+type portOverrideFields PortOverride
+
+func (p *PortOverride) UnmarshalJSON(data []byte) error {
+	var fields portOverrideFields
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	for _, key := range jsonFieldNames(fields) {
+		delete(raw, key)
+	}
+	*p = PortOverride(fields)
+	if len(raw) > 0 {
+		p.Extra = raw
+	}
+	return nil
+}
+
+func (p PortOverride) MarshalJSON() ([]byte, error) {
+	data, err := json.Marshal(portOverrideFields(p))
+	if err != nil || len(p.Extra) == 0 {
+		return data, err
+	}
+	var merged map[string]json.RawMessage
+	if err := json.Unmarshal(data, &merged); err != nil {
+		return nil, err
+	}
+	for key, value := range p.Extra {
+		if _, ok := merged[key]; !ok {
+			merged[key] = value
+		}
+	}
+	return json.Marshal(merged)
 }
 
 // Validate checks that PortOverride fields have valid values.

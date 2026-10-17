@@ -1420,3 +1420,63 @@ func TestPolicyEndpointControllerJSON(t *testing.T) {
 		}
 	})
 }
+
+// Shape copied from a v9 controller's stat/device port_overrides entry.
+func TestPortOverrideKeepsUnknownKeys(t *testing.T) {
+	data := []byte(`{"port_idx":3,"forward":"customize","dot1x_ctrl":"force_authorized",` +
+		`"stp_edge_state":"auto","eee_enabled":false}`)
+	var po PortOverride
+	if err := json.Unmarshal(data, &po); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	if po.PortIdx == nil || *po.PortIdx != 3 || po.Forward != "customize" {
+		t.Fatalf("known fields not decoded: %+v", po)
+	}
+	if len(po.Extra) != 3 {
+		t.Fatalf("Extra = %v, want dot1x_ctrl, stp_edge_state, eee_enabled", po.Extra)
+	}
+	if _, ok := po.Extra["forward"]; ok {
+		t.Error("known key forward should not be in Extra")
+	}
+
+	po.Forward = "all"
+	out, err := json.Marshal(po)
+	if err != nil {
+		t.Fatalf("marshal error: %v", err)
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(out, &raw); err != nil {
+		t.Fatalf("unmarshal to map error: %v", err)
+	}
+	if raw["dot1x_ctrl"] != "force_authorized" || raw["stp_edge_state"] != "auto" || raw["eee_enabled"] != false {
+		t.Errorf("unknown keys not written back: %s", out)
+	}
+	if raw["forward"] != "all" {
+		t.Errorf("forward = %v, want the updated value all", raw["forward"])
+	}
+}
+
+func TestPortOverrideWithoutExtraMarshalsAsBefore(t *testing.T) {
+	out, err := json.Marshal(PortOverride{PortIdx: IntPtr(1), Name: "uplink"})
+	if err != nil {
+		t.Fatalf("marshal error: %v", err)
+	}
+	if string(out) != `{"port_idx":1,"name":"uplink"}` {
+		t.Errorf("got %s", out)
+	}
+}
+
+func TestDeviceConfigPortOverridesKeepUnknownKeys(t *testing.T) {
+	data := []byte(`{"_id":"dev","mac":"aa:bb:cc:dd:ee:ff","port_overrides":[{"port_idx":1,"stp_edge_state":"auto"}]}`)
+	var d DeviceConfig
+	if err := json.Unmarshal(data, &d); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	out, err := json.Marshal(d)
+	if err != nil {
+		t.Fatalf("marshal error: %v", err)
+	}
+	if !strings.Contains(string(out), `"stp_edge_state":"auto"`) {
+		t.Errorf("stp_edge_state dropped from %s", out)
+	}
+}

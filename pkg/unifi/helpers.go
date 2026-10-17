@@ -3,7 +3,9 @@ package unifi
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strconv"
+	"strings"
 )
 
 // IntPtr returns a pointer to the given int value.
@@ -54,4 +56,17 @@ func (fi FlexInt) MarshalJSON() ([]byte, error) {
 func FlexIntPtr(i int) *FlexInt {
 	fi := FlexInt(i)
 	return &fi
+}
+
+// jsonFieldNames returns the JSON keys of v's struct fields, skipping "-".
+func jsonFieldNames(v any) []string {
+	t := reflect.TypeOf(v)
+	names := make([]string, 0, t.NumField())
+	for i := 0; i < t.NumField(); i++ {
+		name, _, _ := strings.Cut(t.Field(i).Tag.Get("json"), ",")
+		if name != "" && name != "-" {
+			names = append(names, name)
+		}
+	}
+	return names
 }
