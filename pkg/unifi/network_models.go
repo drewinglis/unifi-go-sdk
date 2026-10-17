@@ -181,7 +181,10 @@ type NetworkMulticast struct {
 // NetworkAccess contains network access and NAT settings.
 type NetworkAccess struct {
 	InternetAccessEnabled     *bool    `json:"internet_access_enabled,omitempty"`
+	// IntraNetworkAccessEnabled is not returned by v9 controllers; the UI's
+	// "Isolate Network" toggle is NetworkIsolationEnabled.
 	IntraNetworkAccessEnabled *bool    `json:"intra_network_access_enabled,omitempty"`
+	NetworkIsolationEnabled   *bool    `json:"network_isolation_enabled,omitempty"`
 	IsNAT                     *bool    `json:"is_nat,omitempty"`
 	NATOutboundIPAddresses    []string `json:"nat_outbound_ip_addresses,omitempty"`
 	MACOverrideEnabled        *bool    `json:"mac_override_enabled,omitempty"`
